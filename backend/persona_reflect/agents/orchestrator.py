@@ -71,16 +71,24 @@ class PersonaReflectOrchestrator:
     ) -> Dict[str, Any]:
         """
         Process a user's dilemma through all persona agents
+        With lightweight context: if recent_dilemmas provided, personas see reflection journey
         """
         print(f"🎭 Orchestrator processing dilemma for user: {user_id}")
         
-        # Prepare the message for all personas
+        # Build context hint from user's reflection journey (lightweight memory)
+        context_hint = self._build_context_hint(context)
+        
+        # Prepare the message for all personas with journey context
+        journey_instruction = "Consider the user's ongoing reflection journey when forming your response." if context_hint else ""
+        
         prompt = f"""
         User Dilemma: {dilemma}
         
         Context: {context if context else 'No additional context provided'}
+        {context_hint}
         
         Please provide your unique perspective and guidance for this dilemma.
+        {journey_instruction}
         """
         
         # Process through all personas in parallel
@@ -226,6 +234,41 @@ class PersonaReflectOrchestrator:
         for resp in responses:
             formatted.append(f"{resp['name']} ({resp['persona']}): {resp['response']}")
         return "\n\n".join(formatted)
+    
+    def _build_context_hint(self, context: Dict[str, Any]) -> str:
+        """
+        Build lightweight context hint from user's reflection journey
+        NO DATABASE - just uses context dict passed from frontend
+        
+        Example frontend usage:
+        {
+            "recent_dilemmas": ["Stressed about work", "Feeling overwhelmed"],
+            "growth_area": "work-life-balance"  # optional
+        }
+        """
+        hints = []
+        
+        # Add recent reflection topics if provided
+        recent = context.get("recent_dilemmas", [])
+        if recent and isinstance(recent, list) and len(recent) > 0:
+            # Take last 2-3 for brevity
+            recent_topics = recent[-3:] if len(recent) > 3 else recent
+            topics_str = ", ".join([f'"{topic}"' for topic in recent_topics])
+            hints.append(f"User has been reflecting on: {topics_str}")
+            print(f"💭 Context: User reflecting on {len(recent_topics)} recent topics")
+        
+        # Add growth area focus if provided
+        growth_area = context.get("growth_area")
+        if growth_area and isinstance(growth_area, str):
+            hints.append(f"Focus area: {growth_area}")
+            print(f"🎯 Context: Focus area = {growth_area}")
+        
+        # Format as hint block or return empty
+        if hints:
+            hint_text = "\n".join(hints)
+            return f"\n**Reflection Journey Context:**\n{hint_text}\n"
+        
+        return ""
     
     async def create_action_plan(
         self,
