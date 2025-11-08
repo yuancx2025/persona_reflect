@@ -1,0 +1,32 @@
+# Git
+.git
+.gitignore
+
+# Dependencies
+node_modules
+
+# Build output
+dist
+build
+.next
+
+# Environment
+.env
+.env.local
+.env*.local
+
+# IDE
+.vscode
+.idea
+*.swp
+.DS_Store
+
+# Testing
+coverage
+
+# Documentation
+README.md
+*.md
+
+# CI/CD
+.github

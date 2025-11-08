@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Header } from './components/Header';
 import { HomePage } from './components/HomePage';
 import { JournalInput } from './components/JournalInput';
@@ -7,22 +7,39 @@ import { ActionPlanCreator } from './components/ActionPlanCreator';
 import { Dashboard } from './components/Dashboard';
 import { EntryDetail } from './components/EntryDetail';
 import { Button } from './components/ui/button';
-import { mockJournalEntries, generatePersonaResponses } from './lib/mockData';
 import { JournalEntry, PersonaResponse } from './types';
 import { ArrowLeft } from 'lucide-react';
 import { Toaster } from './components/ui/sonner';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
+import { api } from './services/api';
 
 type View = 'home' | 'new-entry' | 'dashboard' | 'entry-detail';
 
 export default function App() {
   const [currentView, setCurrentView] = useState<View>('home');
-  const [journalEntries, setJournalEntries] = useState<JournalEntry[]>(mockJournalEntries);
+  const [journalEntries, setJournalEntries] = useState<JournalEntry[]>([]);
   const [currentEntry, setCurrentEntry] = useState<JournalEntry | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [currentResponses, setCurrentResponses] = useState<PersonaResponse[]>([]);
   const [currentDilemma, setCurrentDilemma] = useState('');
   const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null);
+  const [backendConnected, setBackendConnected] = useState<boolean | null>(null);
+
+  // Check backend health on mount
+  useEffect(() => {
+    const checkBackend = async () => {
+      const isHealthy = await api.checkHealth();
+      setBackendConnected(isHealthy);
+      if (isHealthy) {
+        console.log('✅ Connected to PersonaReflect backend');
+        toast.success('Connected to AI backend!');
+      } else {
+        console.log('⚠️ Backend not available, using mock data');
+        toast.info('Backend not available. Using demo mode with sample data.');
+      }
+    };
+    checkBackend();
+  }, []);
 
   const handleStartJournal = () => {
     setCurrentView('new-entry');
@@ -35,14 +52,18 @@ export default function App() {
     setIsGenerating(true);
     setCurrentDilemma(dilemma);
     
-    // Simulate AI response generation
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    const responses = generatePersonaResponses(dilemma);
-    setCurrentResponses(responses);
-    setIsGenerating(false);
-    
-    toast.success('Insights generated! Review the perspectives from your AI coaches.');
+    try {
+      // Use real API - it will automatically fall back to mock if backend unavailable
+      const result = await api.getReflections(dilemma);
+      setCurrentResponses(result.responses);
+      setIsGenerating(false);
+      
+      toast.success('Insights generated! Review the perspectives from your AI coaches.');
+    } catch (error) {
+      console.error('Error getting reflections:', error);
+      setIsGenerating(false);
+      toast.error('Failed to get insights. Please try again.');
+    }
   };
 
   const handleSaveActionPlan = (entryId: string, steps: string[]) => {
@@ -53,8 +74,8 @@ export default function App() {
       createdAt: new Date().toISOString()
     };
 
-    setJournalEntries(entries =>
-      entries.map(entry =>
+    setJournalEntries((entries: JournalEntry[]) =>
+      entries.map((entry: JournalEntry) =>
         entry.id === entryId
           ? { ...entry, actionPlan }
           : entry
@@ -62,7 +83,7 @@ export default function App() {
     );
 
     if (selectedEntryId) {
-      const updatedEntry = journalEntries.find(e => e.id === selectedEntryId);
+      const updatedEntry = journalEntries.find((e: JournalEntry) => e.id === selectedEntryId);
       if (updatedEntry) {
         setCurrentEntry({ ...updatedEntry, actionPlan });
       }
@@ -108,7 +129,7 @@ export default function App() {
   };
 
   const handleSelectEntry = (id: string) => {
-    const entry = journalEntries.find(e => e.id === id);
+    const entry = journalEntries.find((e: JournalEntry) => e.id === id);
     if (entry) {
       setCurrentEntry(entry);
       setSelectedEntryId(id);
@@ -175,7 +196,7 @@ export default function App() {
                   <div>
                     <h2 className="text-slate-800 mb-4">Insights from Your AI Coaches</h2>
                     <div className="grid gap-4 md:grid-cols-2">
-                      {currentResponses.map((response, index) => (
+                      {currentResponses.map((response: PersonaResponse, index: number) => (
                         <PersonaCard
                           key={response.persona}
                           response={response}
