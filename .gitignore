@@ -50,3 +50,4 @@ logs/
 
 credentials.json
 .gcal_token.json.gcal_token.json
+backend/.gcal_token.json
