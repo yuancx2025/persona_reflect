@@ -10,13 +10,13 @@ class RationalAnalystAgent:
     Alex - Rational Analyst
     Offers structured, data-driven approaches
     """
-    
+
     def __init__(self):
         self.persona_id = "rational-analyst"
         self.name = "Alex"
         self.icon = "📊"
         self.model = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
-        
+
         # Initialize ADK agent with analytical prompts
         self.agent = Agent(
             name="alex_rational_analyst",
@@ -54,8 +54,8 @@ class RationalAnalystAgent:
             """,
             description="Rational Analyst providing structured, data-driven approaches"
         )
-    
+
     async def process(self, dilemma: str, context: dict = {}) -> str:
-        """Process dilemma through analytical lens"""
+        """Process dilemma through mindfulness lens"""
         response = await self.agent.run(dilemma)
         return response.get("content", "")

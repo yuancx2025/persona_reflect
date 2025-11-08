@@ -6,17 +6,30 @@ import asyncio
 from typing import List, Dict, Any
 from datetime import datetime
 from contextlib import asynccontextmanager
-
-from fastapi import FastAPI, HTTPException
+from services.gcal_demo import (
+    gcal,
+    suggest_slots as g_suggest,
+    create_block as g_create,
+)
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from dotenv import load_dotenv
+from persona_reflect.agents.rational_analyst import RationalAnalystAgent
+from persona_reflect.agents.controllers.scheduler import (
+    alex_suggest_with_slots,
+    book_slot,
+)
+from services.gcal_demo import gcal, TOKEN_PATH
+
 
 # Load environment variables
 load_dotenv()
 
 # Import our agents
 from persona_reflect.agents.orchestrator import PersonaReflectOrchestrator
+
+alex_agent = RationalAnalystAgent()
 
 # Data models
 class DilemmaRequest(BaseModel):
@@ -56,14 +69,32 @@ class ActionPlan(BaseModel):
 # Initialize orchestrator
 orchestrator = None
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Initialize agents on startup"""
+    """Initialize agents on startup + auto Google Calendar auth"""
     global orchestrator
     print("🚀 Initializing PersonaReflect multi-agent system...")
     orchestrator = PersonaReflectOrchestrator()
+
+    # --- Auto auth for Google Calendar (runs once at startup) ---
+    try:
+        token_abs = os.path.abspath(TOKEN_PATH)
+        if not os.path.exists(token_abs):
+            print(
+                f"⚠️  No Google Calendar token found at {token_abs} — launching OAuth flow..."
+            )
+            _ = gcal()  # will open browser the first time; saves .gcal_token.json
+            print("✅ Google Calendar authorized and token saved.")
+        else:
+            print(f"✅ Google Calendar token found at {token_abs}.")
+    except Exception as e:
+        # Do not crash the app; just log so you can retry from /api/calendar/auth
+        print(f"❌ Calendar auth check failed: {e}")
+
     yield
     print("👋 Shutting down PersonaReflect...")
+
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -184,6 +215,122 @@ async def get_personas():
             }
         ]
     }
+
+
+@app.get("/api/calendar/auth")
+async def calendar_auth():
+    """
+    Trigger OAuth once to authorize Google Calendar access.
+    If a valid token already exists, this simply ensures the service is ready.
+    """
+    _ = gcal()  # lazily initializes and refreshes token; opens browser on first run
+    return {"ok": True, "message": "Google Calendar authorized"}
+
+
+@app.get("/api/calendar/suggest")
+async def calendar_suggest(
+    days: int = 3,
+    duration: int = 60,
+    start_hour: int = 9,
+    end_hour: int = 18,
+    topk: int = 3,
+):
+    """
+    Suggest free time slots from the user's real Google Calendar.
+    Returns up to `topk` slots of length `duration` minutes within [start_hour, end_hour].
+    """
+    slots = g_suggest(
+        days=days, duration=duration, work_hours=(start_hour, end_hour), topk=topk
+    )
+    # Normalize to the shape your frontend/mock tool already expects
+    normalized = [
+        {
+            "date": s["start"][:10],
+            "time": s["start"][11:16],
+            "datetime": s["start"],
+            "label": s["label"],
+            "end": s["end"],
+        }
+        for s in slots
+    ]
+    return {"slots": normalized}
+
+@app.post("/api/calendar/book")
+async def calendar_book(
+    title: str = Query(..., description="Event title"),
+    start_iso: str = Query(
+        ..., description="RFC3339 datetime, e.g. 2025-11-09T09:00:00-05:00"
+    ),
+    duration: int = Query(60, description="Duration in minutes"),
+    description: str = Query("", description="Optional description"),
+):
+    """
+    Create a real Google Calendar event and return its calendar link.
+    """
+    created = g_create(
+        title=title, start_iso=start_iso, duration=duration, description=description
+    )
+    return {"success": True, "id": created["id"], "htmlLink": created["htmlLink"]}
+
+
+@app.post("/api/alex/schedule")
+async def alex_schedule(
+    dilemma: str = Query(..., description="What do you want to schedule?"),
+    days: int = Query(3),
+    duration: int = Query(60),
+    start_hour: int = Query(9),
+    end_hour: int = Query(18),
+    topk: int = Query(3),
+):
+    """
+    Use the existing orchestrator to get Alex's analysis text,
+    then attach real Google Calendar free slots.
+    """
+    # 1) 用 orchestrator 生成四个角色的回复（这条路径你原来就稳定）
+    result = await orchestrator.process_dilemma(
+        user_id="default_user", dilemma=dilemma, context={}
+    )
+
+    # 2) 抽取 Alex 的文本（persona = 'rational-analyst' / name = 'Alex' 二者择一）
+    alex_text = ""
+    for r in result.get("responses", []):
+        if r.get("persona") == "rational-analyst" or r.get("name") == "Alex":
+            alex_text = r.get("response", "")
+            break
+    if not alex_text:
+        alex_text = "Rational analysis: (fallback)\n- Define goal\n- Constraints\n- Options\n- Metrics\n- Timeline"
+
+    # 3) 查询 Google Calendar 可用时间段
+    slots = g_suggest(
+        days=days, duration=duration, work_hours=(start_hour, end_hour), topk=topk
+    )
+    normalized = [
+        {
+            "label": s["label"],
+            "start": s["start"],
+            "end": s["end"],
+            "date": s["start"][:10],
+            "time": s["start"][11:16],
+        }
+        for s in slots
+    ]
+    return {"alex": alex_text, "slots": normalized}
+
+
+@app.post("/api/alex/book")
+async def alex_book(
+    title: str = Query(..., description="Event title"),
+    start_iso: str = Query(..., description="RFC3339 datetime"),
+    duration: int = Query(60),
+    description: str = Query("", description="Optional description"),
+):
+    """
+    Create an event for the selected slot and return the Google Calendar link.
+    """
+    created = await book_slot(
+        title=title, start_iso=start_iso, duration=duration, description=description
+    )
+    return {"success": True, **created}
 
 if __name__ == "__main__":
     import uvicorn

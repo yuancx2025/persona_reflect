@@ -47,3 +47,5 @@ dist/
 # Logs
 *.log
 logs/
+
+credentials.json
