@@ -279,6 +279,4 @@ MIT License - HackDuke 2025
 
 ---
 
-**Built with ❤️ at HackDuke 2025**
-
 *"Your personal board of advisors, powered by AI"*
