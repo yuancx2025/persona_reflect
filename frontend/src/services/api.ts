@@ -32,6 +32,28 @@ export interface ActionPlan {
   created_at: string;
 }
 
+// === Added: Type definitions for calendar scheduling ===
+export interface CalendarSlot {
+  label: string;     // Human-readable label (e.g. "Morning session")
+  start: string;     // Start time in ISO format
+  end: string;       // End time in ISO format
+  date?: string;     // Optional date string (YYYY-MM-DD)
+  time?: string;     // Optional time string (HH:mm)
+}
+
+export interface AlexScheduleResponse {
+  alex: string;      // Textual reasoning from Alex (Rational Analyst)
+  slots: CalendarSlot[];
+}
+
+export interface BookEventResponse {
+  success: boolean;
+  id: string;
+  htmlLink: string;  // Link to the created event in Google Calendar
+}
+
+
+
 class PersonaReflectAPI {
   private baseUrl: string;
   private isBackendAvailable: boolean = false;
@@ -251,6 +273,79 @@ class PersonaReflectAPI {
       };
     }
   }
+
+  // === Add these methods inside class PersonaReflectAPI ===
+  async alexSchedule(
+    dilemma: string,
+    opts: { days?: number; duration?: number; startHour?: number; endHour?: number; topk?: number } = {}
+  ): Promise<AlexScheduleResponse> {
+    const { days = 3, duration = 60, startHour = 9, endHour = 18, topk = 3 } = opts;
+
+    // If backend is unavailable, return mock response
+    if (!this.isBackendAvailable) {
+      return {
+        alex: `Rational analysis (mock):\n- Goal → schedule ${duration}min blocks over ${days} days.`,
+        slots: [
+          { label: "Morning session", start: new Date().toISOString(), end: new Date(Date.now() + duration * 60000).toISOString() },
+        ],
+      };
+    }
+
+    // Build request URL with query parameters
+    const url = new URL(`${this.baseUrl}/api/alex/schedule`);
+    url.searchParams.set("dilemma", dilemma);
+    url.searchParams.set("days", String(days));
+    url.searchParams.set("duration", String(duration));
+    url.searchParams.set("start_hour", String(startHour));
+    url.searchParams.set("end_hour", String(endHour));
+    url.searchParams.set("topk", String(topk));
+
+    const res = await fetch(url.toString(), { method: "POST" });
+    if (!res.ok) throw new Error("Failed to fetch Alex schedule");
+    return res.json();
+  }
+
+  async alexBookEvent(
+    title: string,
+    startIso: string,
+    duration: number,
+    description = ""
+  ): Promise<BookEventResponse> {
+    // If backend is unavailable, return mock success
+    if (!this.isBackendAvailable) {
+      return {
+        success: true,
+        id: `evt-${Date.now()}`,
+        htmlLink: "https://calendar.google.com/",
+      };
+    }
+
+    const url = new URL(`${this.baseUrl}/api/alex/book`);
+    url.searchParams.set("title", title);
+    url.searchParams.set("start_iso", startIso);
+    url.searchParams.set("duration", String(duration));
+    if (description) url.searchParams.set("description", description);
+
+    const res = await fetch(url.toString(), { method: "POST" });
+    if (!res.ok) throw new Error("Failed to create calendar event");
+    return res.json();
+  }
+
+  // Optional: explicitly trigger Google OAuth authorization flow
+  async calendarAuth(): Promise<{ ok: boolean; message?: string }> {
+    const res = await fetch(`${this.baseUrl}/api/calendar/auth`);
+    if (!res.ok) throw new Error("Calendar authentication failed");
+    return res.json();
+  }
+
+  // Optional: check whether a valid calendar token already exists
+  async calendarStatus(): Promise<{ token_exists: boolean }> {
+    const res = await fetch(`${this.baseUrl}/api/calendar/status`);
+    if (!res.ok) throw new Error("Failed to get calendar token status");
+    return res.json();
+  }
+
+
 }
 
 export const api = new PersonaReflectAPI();
