@@ -6,18 +6,18 @@ import { Card } from './ui/card';
 import { Sparkles, Mic, Square } from 'lucide-react';
 import Recorder from 'recorder-js';
 import { api } from '../services/api';
-import { EmotionChart } from './EmotionChart';
 
 interface JournalInputProps {
   onSubmit: (dilemma: string) => void;
   isLoading?: boolean;
   onEmotionAnalysis?: (probabilities: number[]) => void;
+  emotionProbabilities: number[];
+  setEmotionProbabilities: React.Dispatch<React.SetStateAction<number[]>>;
 }
 
-export function JournalInput({ onSubmit, isLoading = false }: JournalInputProps) {
+export function JournalInput({ onSubmit, isLoading = false, emotionProbabilities, setEmotionProbabilities }: JournalInputProps) {
   const [dilemma, setDilemma] = useState('');
   const [isRecording, setIsRecording] = useState(false);
-  const [emotionProbabilities, setEmotionProbabilities] = useState<number[]>([]);
   const audioContextRef = useRef<AudioContext | null>(null);
   const recorderRef = useRef<Recorder | null>(null);
 
@@ -76,12 +76,6 @@ export function JournalInput({ onSubmit, isLoading = false }: JournalInputProps)
   return (
     <Card className="p-6 bg-white/50 backdrop-blur-sm border-slate-200">
       <form onSubmit={handleSubmit} className="space-y-4">
-        {emotionProbabilities.length > 0 && (
-          <div className="mb-4">
-            <h3 className="text-slate-700 mb-2">Emotion Analysis</h3>
-            <EmotionChart probabilities={emotionProbabilities} />
-          </div>
-        )}
         
         <div className="space-y-2">
           <label htmlFor="dilemma" className="block text-slate-700">
