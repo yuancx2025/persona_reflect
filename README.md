@@ -118,12 +118,111 @@ Then open http://localhost:5173/ and test the complete flow:
 
 ## 📚 API Endpoints
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/` | GET | Health check |
-| `/api/reflect` | POST | Process dilemma through all personas |
-| `/api/action-plan` | POST | Generate action plan from insights |
-| `/api/personas` | GET | Get persona information |
+| Endpoint             | Method | Description                                   |
+| -------------------- | ------ | --------------------------------------------- |
+| `/`                  | GET    | Health check                                  |
+| `/api/reflect`       | POST   | Process dilemma through all personas          |
+| `/api/action-plan`   | POST   | Generate action plan from insights            |
+| `/api/personas`      | GET    | Get persona information                       |
+| `/api/alex/schedule` | POST   | Get available time slots from Google Calendar |
+| `/api/alex/book`     | POST   | Create a new event on Google Calendar         |
+
+---
+
+## 📊 Google Calendar Integration (Rational Analyst — Alex)
+
+Our agents can now analyze your workload and directly schedule focused work sessions in **Google Calendar**.
+Follow these steps to enable the connection locally.
+
+### ✅ 1️⃣ Create Google Cloud OAuth Credentials
+
+1. Go to the **[Google Cloud Console](https://console.cloud.google.com/)**.
+2. Create a new project or use an existing one.
+3. Navigate to:
+
+   ```
+   APIs & Services → Enabled APIs & Services
+   ```
+4. Click **“+ ENABLE APIS AND SERVICES.”**
+5. Search for **Google Calendar API** → click **Enable**.
+6. Then go to:
+
+   ```
+   APIs & Services → Credentials → Create Credentials → OAuth client ID
+   ```
+7. Choose **“Desktop app”** as the application type.
+8. Download the generated JSON file (it will look like `client_secret_xxx.json`).
+
+   * This file is your **OAuth client credentials**.
+   * **Do not commit or share** this file publicly.
+
+---
+
+### ✅ 2️⃣ Add the Credentials to the Backend
+
+1. Move your downloaded credentials into the backend directory and rename it to:
+
+   ```
+   backend/credentials.json
+   ```
+
+2. Add both credentials and tokens to your `.gitignore`:
+
+   ```
+   backend/credentials.json
+   backend/.gcal_token.json
+   ```
+
+---
+
+### ✅ 3️⃣ Add Test Users to the OAuth Consent Screen
+
+Since the app is still in testing mode, only test users can authorize it.
+
+1. Go to:
+
+   ```
+   APIs & Services → OAuth consent screen → Audience
+   ```
+2. Under **Test users**, click **“+ ADD USERS.”**
+3. Add your Gmail address (e.g. `youremail@gmail.com`).
+4. Save changes.
+
+> Only users listed here can log in during OAuth testing.
+
+---
+
+### ✅ 4️⃣ Authorize the App (First-Time Login)
+
+When you run the backend (or call a calendar endpoint for the first time):
+
+1. A browser window will open automatically.
+2. Log in with your Google account.
+3. Approve access to your **Google Calendar**.
+4. A token file will be created automatically:
+
+   ```
+   backend/.gcal_token.json
+   ```
+
+   * This stores your personal access & refresh tokens.
+   * It allows future access without re-login.
+
+> ⚠️ This token file is user-specific. Keep it local and private.
+
+---
+
+### ✅ 5️⃣ Verify Connection
+
+Once authorization is complete, your terminal will show:
+
+```bash
+🚀 Initializing PersonaReflect multi-agent system...
+✅ Google Calendar token found at backend/.gcal_token.json
+```
+
+This confirms your backend is connected to Google Calendar.
+
 
 ### Example Request
 
