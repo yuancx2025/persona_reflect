@@ -72,17 +72,18 @@ python interactive_demo.py
 ### Run the Full Stack
 
 ```bash
-# Backend only (FastAPI + hot reload)
+
+# Pull a prebuilt backend Docker image (this container listens on port 9000)
+docker pull eddiehza/fastapi-app:v3.0
+
+# Run the prebuilt backend image and publish it to localhost:9000
+docker run -d -p 9000:9000 eddiehza/fastapi-app:v3.0
+
+# Backend only: starts FastAPI with hot-reload (uvicorn, default port 8000)
 make backend
 
-# Frontend only (Vite dev server)
+# Frontend only: starts the Vite dev server (default port 5173)
 make frontend
-
-# Both frontend & backend (parallel)
-make dev
-
-# Docker (full stack)
-make docker-up
 ```
 
 ### Full-Stack Integration Test
