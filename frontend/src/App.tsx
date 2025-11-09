@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Header } from './components/Header';
 import { HomePage } from './components/HomePage';
 import { JournalInput } from './components/JournalInput';
+import { EmotionChart } from './components/EmotionChart';
 import { PersonaCard } from './components/PersonaCard';
 import { ActionPlanCreator } from './components/ActionPlanCreator';
 import { Dashboard } from './components/Dashboard';
@@ -28,6 +29,25 @@ export default function App() {
   const [currentSuggestedActions, setCurrentSuggestedActions] = useState<string[]>([]);
   const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null);
   const [backendConnected, setBackendConnected] = useState<boolean | null>(null);
+  
+  // 处理情感分析数据
+  const handleEmotionAnalysis = (probabilities: string | number[]) => {
+    console.log('收到情感分析数据:', probabilities);
+    let processedProbs: number[];
+    
+    if (typeof probabilities === 'string') {
+      processedProbs = probabilities.split(',').map(prob => parseFloat(prob.trim()));
+    } else {
+      processedProbs = probabilities;
+    }
+    
+    if (processedProbs.every(p => !isNaN(p))) {
+      console.log('处理后的情感概率:', processedProbs);
+      setEmotionProbabilities(processedProbs);
+    }
+  };
+  const [emotionProbabilities, setEmotionProbabilities] = useState<number[]>([]);
+  const [hasVoiceInput, setHasVoiceInput] = useState(false);
 
   // Check backend health on mount
   useEffect(() => {
@@ -54,6 +74,8 @@ export default function App() {
   };
 
   const handleSubmitDilemma = async (dilemma: string) => {
+    console.log('Submitting dilemma:', dilemma);
+    console.log('Current emotion probabilities:', emotionProbabilities);
     setIsGenerating(true);
     setCurrentDilemma(dilemma);
     
@@ -157,7 +179,11 @@ export default function App() {
                     Be honest and detailed. The more context you provide, the more helpful the insights will be.
                   </p>
                 </div>
-                <JournalInput onSubmit={handleSubmitDilemma} isLoading={isGenerating} />
+                <JournalInput 
+                  onSubmit={handleSubmitDilemma} 
+                  isLoading={isGenerating} 
+                  onEmotionAnalysis={handleEmotionAnalysis}
+                />
               </>
             ) : (
               <>
@@ -181,6 +207,16 @@ export default function App() {
                       <p className="text-slate-700 leading-relaxed">{currentDilemma}</p>
                     </div>
                   </div>
+
+                          {/* 情感分析图表 */}
+                          {emotionProbabilities.length > 0 && (
+                            <div className="my-8">
+                              <Card className="p-6 bg-gradient-to-br from-white to-blue-50 border-2 border-blue-200 shadow-lg">
+                                <h2 className="text-slate-800 mb-4">Voice Emotion Analysis</h2>
+                                <EmotionChart probabilities={emotionProbabilities} />
+                              </Card>
+                            </div>
+                          )}
 
                           <div>
                             <h2 className="text-slate-800 mb-4">Insights from Your AI Coaches</h2>
