@@ -59,7 +59,25 @@ export function JournalInput({ onSubmit, isLoading = false, emotionProbabilities
       const voice =await api.getVoices(blob);
       const emo = await api.getEmotion(blob);
       console.log(`User voice analysis: Emotion is ${emos[emo.index]}, Predicted probabilities of emotions ${emos} are ${emo.probabilities}, Transcription is "${voice}"`);
-      setEmotionProbabilities(emo.probabilities[0]);
+      // setEmotionProbabilities(emo.probabilities[0]);
+      const rawProbabilities = emo.probabilities[0];
+
+      // 平滑参数 alpha：
+      // 越大表示越贴近原始概率（保留趋势）
+      // 越小表示更平均（更平滑）
+      // 一般 0.7~0.9 比较合适
+      const alpha = 0.8;
+
+      // 计算平滑后的概率（往平均分布或最小值靠拢一点）
+      const numClasses = rawProbabilities.length;
+      const smoothed = rawProbabilities.map((p) => alpha * p + (1 - alpha) / numClasses);
+
+      // 重新归一化，确保和为 1
+      const sum = smoothed.reduce((acc, val) => acc + val, 0);
+      const normalized = smoothed.map((val) => val / sum);
+
+      console.log('Smoothed normalized probabilities:', normalized);
+      setEmotionProbabilities(normalized);
       if (voice && voice.trim()) {
         setDilemma(voice);
         
