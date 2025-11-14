@@ -33,7 +33,7 @@ PersonaReflect uses Google ADK to create a multi-agent system that provides dive
 
 ```bash
 # Clone the repo and checkout the backend_ai2 branch
-git clone https://github.com/yuancx2019/hackDuke2025
+git clone https://github.com/yuancx2025/hackDuke2025
 cd hackDuke2025
 git checkout backend_ai2
 
