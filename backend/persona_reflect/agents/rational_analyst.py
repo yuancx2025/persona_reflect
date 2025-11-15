@@ -4,7 +4,7 @@ Rational Analyst Agent - Alex
 import os
 from google.adk.agents import Agent
 from ..prompts.personas import RATIONAL_ANALYST_PROMPTS
-from persona_reflect.tools import CALENDAR_TOOL_FUNCS
+from persona_reflect.tools import TOOLS_RATIONAL
 
 class RationalAnalystAgent:
     """
@@ -47,14 +47,14 @@ class RationalAnalystAgent:
             5. Provide implementation timeline
             
             {RATIONAL_ANALYST_PROMPTS}
-            
+
             Special capability: You can help create calendar blocks and time management strategies.
-            
+
             Remember: Focus on practical, measurable solutions. Be analytical but accessible.
             Keep responses structured and actionable (3-4 paragraphs with clear points).
             """,
             description="Rational Analyst providing structured, data-driven approaches",
-            tools=CALENDAR_TOOL_FUNCS,  # Attach calendar tools
+            tools=TOOLS_RATIONAL,  # Calendar and scheduling tools
         )
 
     async def process(self, dilemma: str, context: dict = {}) -> str:

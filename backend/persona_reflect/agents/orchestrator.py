@@ -72,25 +72,53 @@ class PersonaReflectOrchestrator:
         """
         Process a user's dilemma through all persona agents
         With lightweight context: if recent_dilemmas provided, personas see reflection journey
+        Now includes intent detection for context-aware routing
         """
         print(f"🎭 Orchestrator processing dilemma for user: {user_id}")
-        
+
+        # Detect user intent from dilemma
+        intent_info = self._detect_intent(dilemma)
+
+        # Enrich context based on detected intent
+        if intent_info["primary"]:
+            context["detected_intent"] = intent_info["primary"]
+
+            # For scheduling intents, add routing hint
+            if "schedule" in intent_info["intents"]:
+                context["routing_hint"] = "User wants to schedule time. Alex (Rational Analyst) should use calendar tools to find and book time slots."
+                print("📅 Schedule intent detected - routing hint added for calendar tools")
+
+            # For CBT intents, add thought pattern focus
+            elif "cbt" in intent_info["intents"]:
+                context["routing_hint"] = "Focus on identifying thought patterns and cognitive distortions. Dr. Chen should use CBT tools."
+                print("🧠 CBT intent detected - routing hint added for thought pattern analysis")
+
+            # For mindfulness intents, suggest breath-first approach
+            elif "mindfulness" in intent_info["intents"]:
+                context["routing_hint"] = "User needs grounding and present-moment awareness. Sage should offer mindfulness practices."
+                print("🧘 Mindfulness intent detected - routing hint added for grounding practices")
+
+            # For support intents, flag for resource offering
+            elif "support" in intent_info["intents"]:
+                context["routing_hint"] = "User may need professional resources or crisis support. Maya should assess and offer appropriate resources."
+                print("💙 Support intent detected - routing hint added for resource offering")
+
         # Build context hint from user's reflection journey (lightweight memory)
         context_hint = self._build_context_hint(context)
-        
+
         # Prepare the message for all personas with journey context
         journey_instruction = "Consider the user's ongoing reflection journey when forming your response." if context_hint else ""
-        
+
         prompt = f"""
         User Dilemma: {dilemma}
-        
+
         Context: {context if context else 'No additional context provided'}
         {context_hint}
-        
+
         Please provide your unique perspective and guidance for this dilemma.
         {journey_instruction}
         """
-        
+
         # Process through all personas in parallel
         tasks = [
             self._get_persona_response(self.cognitive_agent, prompt),
@@ -98,16 +126,17 @@ class PersonaReflectOrchestrator:
             self._get_persona_response(self.rational_agent, prompt),
             self._get_persona_response(self.mindfulness_agent, prompt)
         ]
-        
+
         responses = await asyncio.gather(*tasks)
-        
+
         # Extract suggested actions from responses
         suggested_actions = await self._synthesize_actions(responses, dilemma)
-        
+
         return {
             "id": f"entry-{datetime.now().timestamp()}",
             "responses": responses,
-            "suggested_actions": suggested_actions
+            "suggested_actions": suggested_actions,
+            "detected_intent": intent_info["primary"]  # Include in response for frontend
         }
 
     async def _invoke_agent(
@@ -235,19 +264,68 @@ class PersonaReflectOrchestrator:
             formatted.append(f"{resp['name']} ({resp['persona']}): {resp['response']}")
         return "\n\n".join(formatted)
     
+    def _detect_intent(self, dilemma: str) -> Dict[str, Any]:
+        """
+        Detect user intent from dilemma text using keyword matching.
+
+        Returns:
+            Dictionary with detected intents and primary intent
+        """
+        dilemma_lower = dilemma.lower()
+
+        # Define intent keywords
+        intents = {
+            "schedule": [
+                "schedule", "calendar", "time block", "plan time", "book",
+                "set aside", "when can i", "find time", "block out", "allocate time"
+            ],
+            "cbt": [
+                "stuck", "negative thought", "anxious", "procrastinating",
+                "distortion", "thinking", "worry", "ruminating", "overthinking",
+                "can't stop thinking", "spiraling", "anxious about"
+            ],
+            "mindfulness": [
+                "overwhelmed", "breathe", "grounding", "present", "anxious",
+                "calm down", "center", "focus", "racing thoughts", "can't focus",
+                "stressed", "tense", "tight", "body", "relax"
+            ],
+            "support": [
+                "help", "resources", "crisis", "don't know what to do",
+                "need support", "feeling lost", "don't know where to turn",
+                "therapy", "counseling", "professional help", "suicide", "self-harm"
+            ]
+        }
+
+        detected = []
+        for intent, keywords in intents.items():
+            if any(keyword in dilemma_lower for keyword in keywords):
+                detected.append(intent)
+
+        # Determine primary intent (first detected)
+        primary = detected[0] if detected else None
+
+        if detected:
+            print(f"🎯 Intent Detection: {detected} (primary: {primary})")
+
+        return {
+            "intents": detected,
+            "primary": primary
+        }
+
     def _build_context_hint(self, context: Dict[str, Any]) -> str:
         """
         Build lightweight context hint from user's reflection journey
         NO DATABASE - just uses context dict passed from frontend
-        
+
         Example frontend usage:
         {
             "recent_dilemmas": ["Stressed about work", "Feeling overwhelmed"],
-            "growth_area": "work-life-balance"  # optional
+            "growth_area": "work-life-balance",  # optional
+            "detected_intent": "schedule"  # added by orchestrator
         }
         """
         hints = []
-        
+
         # Add recent reflection topics if provided
         recent = context.get("recent_dilemmas", [])
         if recent and isinstance(recent, list) and len(recent) > 0:
@@ -256,18 +334,28 @@ class PersonaReflectOrchestrator:
             topics_str = ", ".join([f'"{topic}"' for topic in recent_topics])
             hints.append(f"User has been reflecting on: {topics_str}")
             print(f"💭 Context: User reflecting on {len(recent_topics)} recent topics")
-        
+
         # Add growth area focus if provided
         growth_area = context.get("growth_area")
         if growth_area and isinstance(growth_area, str):
             hints.append(f"Focus area: {growth_area}")
             print(f"🎯 Context: Focus area = {growth_area}")
-        
+
+        # Add detected intent hint if provided
+        detected_intent = context.get("detected_intent")
+        if detected_intent and isinstance(detected_intent, str):
+            hints.append(f"Detected user intent: {detected_intent}")
+
+        # Add routing hints if provided
+        routing_hint = context.get("routing_hint")
+        if routing_hint and isinstance(routing_hint, str):
+            hints.append(f"💡 {routing_hint}")
+
         # Format as hint block or return empty
         if hints:
             hint_text = "\n".join(hints)
             return f"\n**Reflection Journey Context:**\n{hint_text}\n"
-        
+
         return ""
     
     async def create_action_plan(

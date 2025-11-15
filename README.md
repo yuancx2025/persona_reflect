@@ -254,16 +254,65 @@ curl -X POST http://localhost:8000/api/reflect \
 
 ```
 hackDuke2025/
-├── backend/                    # ADK multi-agent system
-│   ├── persona_reflect/       
-│   │   ├── agents/            # Four persona agents
-│   │   ├── prompts/           # Few-shot prompts
-│   │   └── main.py            # FastAPI server
-│   └── requirements.txt
-├── frontend/                   # React application
-│   └── AI Self-Reflection Coach/
-├── docker-compose.yml         # Full-stack deployment
-└── Makefile                   # Quick commands
+├── backend/                            # Main ADK multi-agent system
+│   ├── persona_reflect/               
+│   │   ├── agents/                    # AI Persona Agents
+│   │   │   ├── orchestrator.py       # Main ADK orchestrator
+│   │   │   ├── cognitive_behavioral.py # Dr. Chen (CBT Coach)
+│   │   │   ├── empathetic_friend.py   # Maya (Empathetic Friend)
+│   │   │   ├── rational_analyst.py    # Alex (Rational Analyst)
+│   │   │   ├── mindfulness_mentor.py  # Sage (Mindfulness Mentor)
+│   │   │   └── controllers/
+│   │   │       └── scheduler.py       # Calendar integration logic
+│   │   ├── prompts/                   # Few-shot prompt templates
+│   │   │   └── personas.py            # Persona definitions & examples
+│   │   ├── tools/                     # Agent tools
+│   │   │   ├── calendar_tools.py      # Google Calendar integration
+│   │   │   ├── cbt_tools.py           # CBT-specific tools
+│   │   │   ├── mindfulness_tools.py   # Mindfulness exercises
+│   │   │   └── support_tools.py       # General support tools
+│   │   ├── services/                  # External service integrations
+│   │   │   └── gcal_demo.py           # Google Calendar API wrapper
+│   │   └── main.py                    # FastAPI server & endpoints
+│   ├── requirements.txt               # Python dependencies
+│   ├── Dockerfile                     # Backend container config
+│   ├── interactive_demo.py            # CLI demo for testing agents
+│   └── quick_test.py                  # Smoke tests
+│
+├── frontend/                           # React + TypeScript UI
+│   ├── src/
+│   │   ├── components/                # React components
+│   │   │   ├── JournalInput.tsx       # User input interface
+│   │   │   ├── PersonaCard.tsx        # Persona response display
+│   │   │   ├── ActionPlanCreator.tsx  # Action plan interface
+│   │   │   ├── AlexScheduler.tsx      # Calendar booking UI
+│   │   │   ├── Dashboard.tsx          # Main dashboard
+│   │   │   ├── EmotionChart.tsx       # Emotion visualization
+│   │   │   └── ui/                    # Reusable UI components
+│   │   ├── services/
+│   │   │   ├── api.ts                 # API client
+│   │   │   └── frontend-api-service.ts # Service layer
+│   │   ├── types/
+│   │   │   └── index.ts               # TypeScript type definitions
+│   │   └── App.tsx                    # Main app component
+│   ├── package.json                   # Node dependencies
+│   ├── Dockerfile                     # Frontend container config
+│   └── vite.config.ts                 # Vite build configuration
+│
+├── fastapi/                            # Alternative FastAPI setup
+│   ├── app.py                         # Standalone API server
+│   ├── requirements.txt
+│   └── Dockerfile
+│
+├── models/                             # ML models (future)
+│   └── speechemo/                     # Speech emotion recognition
+│       ├── anger.wav                  # Sample audio
+│       ├── test.py                    # Model test script
+│       └── requirements.txt
+│
+├── docker-compose.yml                 # Full-stack orchestration
+├── Makefile                           # Development commands
+└── README.md                          # This file
 ```
 
 ## 🧪 Testing the System
@@ -304,21 +353,364 @@ hackDuke2025/
 4. **Synthesis**: System generates actionable steps
 5. **Track**: User can save and track progress
 
+## 🔄 Complete Pipeline
+
+### 1. **User Input Layer**
+```
+Frontend (React) → API Request → FastAPI Backend
+```
+- User enters dilemma via `JournalInput.tsx`
+- Frontend sends POST to `/api/reflect`
+- Request includes `user_id`, `dilemma`, and optional `context`
+
+### 2. **Backend Processing Layer**
+```
+FastAPI → ADK Orchestrator → Multi-Agent System
+```
+**Entry Point:** `backend/persona_reflect/main.py`
+- Receives HTTP request
+- Validates input with Pydantic models
+- Initializes `PersonaReflectOrchestrator`
+
+**Orchestrator:** `backend/persona_reflect/agents/orchestrator.py`
+- Uses Google ADK's multi-agent framework
+- Distributes dilemma to all 4 personas in parallel
+- Coordinates agent responses via ADK's routing
+
+### 3. **Agent Processing Layer**
+```
+Orchestrator → [Dr. Chen | Maya | Alex | Sage] → Tools
+```
+
+**Four Specialized Agents:**
+
+1. **Dr. Chen (CBT Coach)** - `cognitive_behavioral.py`
+   - Applies cognitive-behavioral therapy techniques
+   - Uses `cbt_tools.py` for structured exercises
+   - Identifies cognitive distortions
+   - Provides reframing strategies
+
+2. **Maya (Empathetic Friend)** - `empathetic_friend.py`
+   - Offers emotional support and validation
+   - Uses `support_tools.py` for empathy techniques
+   - Focuses on emotional understanding
+   - Provides compassionate responses
+
+3. **Alex (Rational Analyst)** - `rational_analyst.py`
+   - Provides logical, data-driven analysis
+   - Uses `calendar_tools.py` for scheduling
+   - **Google Calendar Integration** via `services/gcal_demo.py`
+   - Can suggest time slots and book focused work sessions
+   - Creates actionable task breakdowns
+
+4. **Sage (Mindfulness Mentor)** - `mindfulness_mentor.py`
+   - Guides mindfulness and meditation practices
+   - Uses `mindfulness_tools.py` for exercises
+   - Offers present-moment awareness techniques
+   - Provides breathing exercises and body scans
+
+**Agent Tools:**
+- Each agent has access to specialized tool functions
+- Tools are defined in `backend/persona_reflect/tools/`
+- Google Calendar tools enable real scheduling capabilities
+
+### 4. **Response Synthesis Layer**
+```
+Agent Responses → Orchestrator → Unified Response
+```
+- Orchestrator collects all persona responses
+- Each response includes:
+  - `persona`: Agent identifier
+  - `name`: Display name
+  - `icon`: UI icon
+  - `response`: Actual advice text
+- Returns combined insights to FastAPI endpoint
+
+### 5. **Action Plan Generation**
+```
+POST /api/action-plan → Action Plan Generator → Concrete Steps
+```
+- User can request actionable steps
+- System synthesizes insights from all personas
+- Generates prioritized, measurable action items
+- Frontend displays via `ActionPlanCreator.tsx`
+
+### 6. **Calendar Integration Flow** (Alex-specific)
+```
+User Request → Alex Agent → Google Calendar API → Booked Event
+```
+
+**Scheduling Flow:**
+1. User asks Alex for help with time management
+2. Alex agent uses `alex_suggest_with_slots()` from `controllers/scheduler.py`
+3. Calls `gcal_demo.py` to fetch real calendar data
+4. Suggests optimal time slots based on availability
+5. Frontend displays slots via `AlexScheduler.tsx`
+6. User selects slot → POST to `/api/alex/book`
+7. Event created in real Google Calendar
+
+**OAuth Flow:**
+- First run: `gcal_demo.py` initiates OAuth
+- Opens browser for Google sign-in
+- Stores refresh token in `.gcal_token.json`
+- Subsequent calls use cached token
+
+### 7. **Frontend Rendering Layer**
+```
+API Response → React State → Component Rendering
+```
+
+**Key Components:**
+- `Dashboard.tsx`: Main layout and navigation
+- `JournalInput.tsx`: Dilemma input form
+- `PersonaCard.tsx`: Individual persona response cards
+- `ActionPlanCreator.tsx`: Action plan interface
+- `AlexScheduler.tsx`: Calendar booking interface
+- `EmotionChart.tsx`: Emotional tracking visualization
+
+**State Management:**
+- API calls via `services/api.ts`
+- Type-safe interfaces in `types/index.ts`
+- React hooks for local state
+- Toast notifications for feedback
+
+### 8. **Data Flow Diagram**
+
+```
+┌─────────────┐
+│   User      │
+└──────┬──────┘
+       │ Enter dilemma
+       ▼
+┌─────────────────────┐
+│  Frontend (React)   │
+│  - JournalInput     │
+└──────┬──────────────┘
+       │ POST /api/reflect
+       ▼
+┌─────────────────────┐
+│  FastAPI Backend    │
+│  - main.py          │
+└──────┬──────────────┘
+       │ Initialize
+       ▼
+┌─────────────────────┐
+│  ADK Orchestrator   │
+│  - orchestrator.py  │
+└──────┬──────────────┘
+       │ Distribute in parallel
+       ▼
+┌──────────────────────────────────────┐
+│  Multi-Agent Processing (Parallel)   │
+├──────────┬──────────┬────────┬───────┤
+│ Dr. Chen │   Maya   │  Alex  │  Sage │
+│   CBT    │ Empathy  │ Logic  │ Mind. │
+└────┬─────┴────┬─────┴───┬────┴───┬───┘
+     │          │         │        │
+     │ Tools    │ Tools   │ Tools  │ Tools
+     │          │         │        │
+     │          │         ├────────┤
+     │          │         │ GCal   │
+     │          │         │ API    │
+     └──────────┴─────────┴────────┘
+                │
+                │ Combine responses
+                ▼
+         ┌──────────────┐
+         │   Response   │
+         │   Synthesis  │
+         └──────┬───────┘
+                │
+                ▼
+         ┌──────────────┐
+         │   Frontend   │
+         │   Rendering  │
+         └──────────────┘
+```
+
+### 9. **Development & Deployment Pipeline**
+
+**Local Development:**
+```bash
+make install  → Install dependencies
+make backend  → Start FastAPI (port 8000)
+make frontend → Start Vite (port 5173)
+```
+
+**Testing:**
+```bash
+python quick_test.py        # Smoke tests
+python interactive_demo.py  # CLI demo
+make test                   # Full test suite
+```
+
+**Docker Deployment:**
+```bash
+make docker-build  # Build images
+make docker-up     # Start containers
+# Backend: localhost:8000
+# Frontend: localhost:5173
+```
+
+**Production Flow:**
+1. Build optimized Docker images
+2. Push to container registry
+3. Deploy to Google Cloud Run / K8s
+4. Set environment variables
+5. Configure OAuth callbacks
+6. Monitor with logging
+
 ## 🔧 Development
 
-### Install Dependencies
+### Quick Commands
+
 ```bash
+# Install all dependencies
 make install
+
+# Run full stack in development mode
+make dev
+
+# Run services individually
+make backend   # FastAPI on :8000
+make frontend  # Vite on :5173
+
+# Docker deployment
+make docker-up    # Start all services
+make docker-down  # Stop services
+
+# Testing & Quality
+make test      # Run backend tests
+make lint      # Format and lint code
+make clean     # Remove build artifacts
 ```
 
-### Run Tests
+### Development Workflow
+
+1. **Setup Environment**
+   ```bash
+   # Clone and install
+   git clone https://github.com/yuancx2019/hackDuke2025
+   cd hackDuke2025
+   make install
+   
+   # Configure API keys
+   cp backend/.env.example backend/.env
+   # Edit backend/.env with your GOOGLE_API_KEY
+   ```
+
+2. **Start Development Servers**
+   ```bash
+   # Terminal 1: Backend
+   make backend
+   
+   # Terminal 2: Frontend
+   make frontend
+   ```
+
+3. **Test Changes**
+   ```bash
+   # Quick smoke test
+   cd backend && python quick_test.py
+   
+   # Interactive agent testing
+   cd backend && python interactive_demo.py
+   
+   # Full test suite
+   make test
+   ```
+
+4. **Code Quality**
+   ```bash
+   # Format and lint
+   make lint
+   
+   # Check for errors
+   make test
+   ```
+
+### File Modification Guide
+
+**Adding a New Agent:**
+1. Create agent file in `backend/persona_reflect/agents/`
+2. Define agent class with ADK decorators
+3. Add persona definition to `prompts/personas.py`
+4. Register in `orchestrator.py`
+5. Update frontend `PersonaCard.tsx` for display
+
+**Adding Agent Tools:**
+1. Create tool file in `backend/persona_reflect/tools/`
+2. Define tool functions with proper decorators
+3. Import in agent file
+4. Add to agent's tool list
+
+**Modifying API Endpoints:**
+1. Edit `backend/persona_reflect/main.py`
+2. Update Pydantic models for validation
+3. Update frontend `services/api.ts`
+4. Update TypeScript types in `types/index.ts`
+
+**Frontend Components:**
+1. Create component in `frontend/src/components/`
+2. Import in parent component or `App.tsx`
+3. Use TypeScript for type safety
+4. Follow existing Tailwind styling patterns
+
+### Environment Variables
+
+**Backend (`backend/.env`):**
 ```bash
-make test-backend
+GOOGLE_API_KEY=your_gemini_api_key_here
+API_HOST=0.0.0.0
+API_PORT=8000
+CORS_ORIGINS=http://localhost:5173
 ```
 
-### Clean Build
+**Frontend (`.env.local` optional):**
 ```bash
-make clean
+VITE_API_URL=http://localhost:8000
+```
+
+### Debugging Tips
+
+**Backend Issues:**
+```bash
+# Check API health
+curl http://localhost:8000/
+
+# Test specific endpoint
+curl -X POST http://localhost:8000/api/reflect \
+  -H "Content-Type: application/json" \
+  -d '{"user_id":"test","dilemma":"test issue"}'
+
+# View logs
+# Uvicorn logs appear in terminal running make backend
+```
+
+**Frontend Issues:**
+```bash
+# Check console in browser DevTools (F12)
+# Verify API connection
+# Check Network tab for failed requests
+
+# Clear cache and rebuild
+rm -rf frontend/node_modules
+cd frontend && npm install
+npm run dev
+```
+
+**Docker Issues:**
+```bash
+# View container logs
+docker logs persona-reflect-backend
+docker logs persona-reflect-frontend
+
+# Restart services
+make docker-down
+make docker-up
+
+# Rebuild without cache
+docker-compose build --no-cache
 ```
 
 ## 📈 Performance

@@ -4,7 +4,7 @@ Cognitive-Behavioral Coach Agent - Dr. Chen
 import os
 from google.adk.agents import Agent
 from ..prompts.personas import COGNITIVE_BEHAVIORAL_PROMPTS
-from persona_reflect.tools import CALENDAR_TOOL_FUNCS
+from persona_reflect.tools import TOOLS_RATIONAL, TOOLS_CBT
 
 class CognitiveBehavioralAgent:
     """
@@ -47,12 +47,12 @@ class CognitiveBehavioralAgent:
             5. Create behavioral action steps
             
             {COGNITIVE_BEHAVIORAL_PROMPTS}
-            
+
             Remember: You are NOT providing therapy or diagnosis. You're offering coaching insights based on CBT principles.
             Keep responses concise (3-4 paragraphs) and actionable.
             """,
             description="Cognitive-Behavioral Coach focusing on thought patterns and practical strategies",
-            tools=CALENDAR_TOOL_FUNCS,
+            tools=TOOLS_RATIONAL + TOOLS_CBT,
         )
 
     async def process(self, dilemma: str, context: dict = {}) -> str:

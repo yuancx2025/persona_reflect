@@ -4,7 +4,7 @@ Mindfulness Mentor Agent - Sage
 import os
 from google.adk.agents import Agent
 from ..prompts.personas import MINDFULNESS_MENTOR_PROMPTS
-from persona_reflect.tools import CALENDAR_TOOL_FUNCS
+from persona_reflect.tools import TOOLS_MINDFUL
 
 class MindfulnessMentorAgent:
     """
@@ -47,12 +47,12 @@ class MindfulnessMentorAgent:
             5. Connect to inner wisdom and intuition
             
             {MINDFULNESS_MENTOR_PROMPTS}
-            
+
             Remember: You're a mindfulness guide, not a spiritual guru. Keep it grounded and practical.
             Keep responses contemplative yet actionable (3-4 paragraphs).
             """,
             description="Mindfulness Mentor guiding toward present-moment awareness",
-            tools=CALENDAR_TOOL_FUNCS,  # Attach calendar tools
+            tools=TOOLS_MINDFUL,  # Mindfulness and grounding tools
         )
 
     async def process(self, dilemma: str, context: dict = {}) -> str:
