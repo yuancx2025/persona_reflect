@@ -296,36 +296,6 @@ hackDuke2025/
 └── README.md                          # This file
 ```
 
-## 🧪 Testing the System
-
-1. **Smoke test + dependency checks**
-
-    ```bash
-    cd backend
-    python quick_test.py
-    ```
-
-    > The script verifies `.env`, required packages, module imports, and optionally runs a live ADK agent call.
-
-2. **Interactive multi-agent demo**
-
-    ```bash
-    python interactive_demo.py
-    ```
-
-    > Choose a sample dilemma or type your own to see all four personas respond in parallel.
-
-3. **API health check (after `make backend` or `make docker-up`)**
-
-    ```bash
-    curl -X POST http://localhost:8000/api/reflect \
-      -H "Content-Type: application/json" \
-      -d '{
-        "user_id": "demo_user",
-        "dilemma": "I struggle with work-life balance"
-      }'
-    ```
-
 ## 🔄 Complete Pipeline
 
 ### 1. **User Input Layer**
