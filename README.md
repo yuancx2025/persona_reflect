@@ -13,7 +13,6 @@ PersonaReflect uses Google ADK to create a multi-agent system that provides dive
 - [📊 Google Calendar Integration](#-google-calendar-integration-rational-analyst--alex) - OAuth setup guide
 - [🔄 Complete Pipeline](#-complete-pipeline) - Architecture deep-dive
 - [📚 API Endpoints](#-api-endpoints) - Backend API reference
-- [🛠️ Development](#-development) - Contributing guide
 
 ## 🏗️ Architecture
 
