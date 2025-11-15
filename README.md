@@ -5,6 +5,16 @@
 
 PersonaReflect uses Google ADK to create a multi-agent system that provides diverse perspectives on personal dilemmas through four distinct AI personas.
 
+## 📑 Quick Navigation
+
+- [🌟 Features](#-features) - Overview of capabilities
+- [🚀 Quick Start](#-quick-start-hackathon-demo) - Setup & installation
+- [🧰 Agent Tools](#-specialized-tools-15-functions) - Tool summary (detailed docs in `agents/README.md`)
+- [📊 Google Calendar Integration](#-google-calendar-integration-rational-analyst--alex) - OAuth setup guide
+- [🔄 Complete Pipeline](#-complete-pipeline) - Architecture deep-dive
+- [📚 API Endpoints](#-api-endpoints) - Backend API reference
+- [🛠️ Development](#-development) - Contributing guide
+
 ## 🏗️ Architecture
 
 ```mermaid
@@ -35,8 +45,10 @@ graph TD
   - 💙 **Maya** - Empathetic Friend
   - 📊 **Alex** - Rational Analyst
   - 🧘 **Sage** - Mindfulness Mentor
+- **15+ Specialized Tools**: Each agent equipped with evidence-based therapeutic tools
 - **Multi-Agent Orchestration**: Using Google ADK for coordinated responses
 - **Action Plan Generation**: Synthesizes insights into concrete steps
+- **Google Calendar Integration**: Real scheduling and time management
 - **Beautiful React Frontend**: Clean, intuitive interface
 - **Real-time Processing**: Fast, parallel agent processing
 
@@ -224,17 +236,6 @@ Once authorization is complete, your terminal will show:
 This confirms your backend is connected to Google Calendar.
 
 
-### Example Request
-
-```bash
-curl -X POST http://localhost:8000/api/reflect \
-  -H "Content-Type: application/json" \
-  -d '{
-    "user_id": "demo_user",
-    "dilemma": "I keep procrastinating on my important project"
-  }'
-```
-
 ## 🛠️ Tech Stack
 
 ### Backend
@@ -257,6 +258,7 @@ hackDuke2025/
 ├── backend/                            # Main ADK multi-agent system
 │   ├── persona_reflect/               
 │   │   ├── agents/                    # AI Persona Agents
+│   │   │   ├── README.md              # 📖 Complete agent & tool documentation
 │   │   │   ├── orchestrator.py       # Main ADK orchestrator
 │   │   │   ├── cognitive_behavioral.py # Dr. Chen (CBT Coach)
 │   │   │   ├── empathetic_friend.py   # Maya (Empathetic Friend)
@@ -266,11 +268,12 @@ hackDuke2025/
 │   │   │       └── scheduler.py       # Calendar integration logic
 │   │   ├── prompts/                   # Few-shot prompt templates
 │   │   │   └── personas.py            # Persona definitions & examples
-│   │   ├── tools/                     # Agent tools
-│   │   │   ├── calendar_tools.py      # Google Calendar integration
-│   │   │   ├── cbt_tools.py           # CBT-specific tools
-│   │   │   ├── mindfulness_tools.py   # Mindfulness exercises
-│   │   │   └── support_tools.py       # General support tools
+│   │   ├── tools/                     # Agent tools (15+ functions)
+│   │   │   ├── __init__.py            # Tool exports & persona mapping
+│   │   │   ├── calendar_tools.py      # Google Calendar integration (3 tools)
+│   │   │   ├── cbt_tools.py           # CBT-specific tools (3 tools)
+│   │   │   ├── mindfulness_tools.py   # Mindfulness exercises (4 tools)
+│   │   │   └── support_tools.py       # General support tools (4 tools)
 │   │   ├── services/                  # External service integrations
 │   │   │   └── gcal_demo.py           # Google Calendar API wrapper
 │   │   └── main.py                    # FastAPI server & endpoints
@@ -345,14 +348,6 @@ hackDuke2025/
       }'
     ```
 
-## 🎮 Demo Flow
-
-1. **Start**: User enters a personal dilemma
-2. **Process**: ADK orchestrator distributes to 4 agents in parallel
-3. **Insights**: Each persona provides unique perspective
-4. **Synthesis**: System generates actionable steps
-5. **Track**: User can save and track progress
-
 ## 🔄 Complete Pipeline
 
 ### 1. **User Input Layer**
@@ -387,32 +382,35 @@ Orchestrator → [Dr. Chen | Maya | Alex | Sage] → Tools
 1. **Dr. Chen (CBT Coach)** - `cognitive_behavioral.py`
    - Applies cognitive-behavioral therapy techniques
    - Uses `cbt_tools.py` for structured exercises
-   - Identifies cognitive distortions
-   - Provides reframing strategies
 
 2. **Maya (Empathetic Friend)** - `empathetic_friend.py`
-   - Offers emotional support and validation
    - Uses `support_tools.py` for empathy techniques
-   - Focuses on emotional understanding
-   - Provides compassionate responses
 
 3. **Alex (Rational Analyst)** - `rational_analyst.py`
    - Provides logical, data-driven analysis
    - Uses `calendar_tools.py` for scheduling
    - **Google Calendar Integration** via `services/gcal_demo.py`
-   - Can suggest time slots and book focused work sessions
-   - Creates actionable task breakdowns
 
 4. **Sage (Mindfulness Mentor)** - `mindfulness_mentor.py`
    - Guides mindfulness and meditation practices
    - Uses `mindfulness_tools.py` for exercises
-   - Offers present-moment awareness techniques
-   - Provides breathing exercises and body scans
 
-**Agent Tools:**
-- Each agent has access to specialized tool functions
-- Tools are defined in `backend/persona_reflect/tools/`
-- Google Calendar tools enable real scheduling capabilities
+### 🧰 Specialized Tools (15+ Functions)
+
+Each agent has access to **evidence-based therapeutic tools** that go beyond conversation:
+
+| Persona | Tools | Capabilities |
+|---------|-------|--------------|
+| 🧠 **Dr. Chen** | 3 CBT tools | Detect cognitive distortions, create thought records, behavioral activation |
+| 💙 **Maya** | 4 support tools | Reframe self-talk, grounding exercises, mental health resources |
+| 📊 **Alex** | 3 calendar tools | **Real Google Calendar integration** - find slots, book events |
+| 🧘 **Sage** | 4 mindfulness tools | Breathwork, body scans, values clarification, 5-4-3-2-1 grounding |
+
+**📖 Detailed Documentation:** See [`backend/persona_reflect/agents/README.md`](./backend/persona_reflect/agents/README.md) for:
+- Complete tool reference with examples
+- Evidence-based techniques (CBT, ACT, MBSR, self-compassion research)
+- Implementation details and usage patterns
+- How to add new tools
 
 ### 4. **Response Synthesis Layer**
 ```
@@ -455,26 +453,7 @@ User Request → Alex Agent → Google Calendar API → Booked Event
 - Stores refresh token in `.gcal_token.json`
 - Subsequent calls use cached token
 
-### 7. **Frontend Rendering Layer**
-```
-API Response → React State → Component Rendering
-```
-
-**Key Components:**
-- `Dashboard.tsx`: Main layout and navigation
-- `JournalInput.tsx`: Dilemma input form
-- `PersonaCard.tsx`: Individual persona response cards
-- `ActionPlanCreator.tsx`: Action plan interface
-- `AlexScheduler.tsx`: Calendar booking interface
-- `EmotionChart.tsx`: Emotional tracking visualization
-
-**State Management:**
-- API calls via `services/api.ts`
-- Type-safe interfaces in `types/index.ts`
-- React hooks for local state
-- Toast notifications for feedback
-
-### 8. **Data Flow Diagram**
+### Data Flow Diagram
 
 ```
 ┌─────────────┐
@@ -528,63 +507,6 @@ API Response → React State → Component Rendering
          └──────────────┘
 ```
 
-### 9. **Development & Deployment Pipeline**
-
-**Local Development:**
-```bash
-make install  → Install dependencies
-make backend  → Start FastAPI (port 8000)
-make frontend → Start Vite (port 5173)
-```
-
-**Testing:**
-```bash
-python quick_test.py        # Smoke tests
-python interactive_demo.py  # CLI demo
-make test                   # Full test suite
-```
-
-**Docker Deployment:**
-```bash
-make docker-build  # Build images
-make docker-up     # Start containers
-# Backend: localhost:8000
-# Frontend: localhost:5173
-```
-
-**Production Flow:**
-1. Build optimized Docker images
-2. Push to container registry
-3. Deploy to Google Cloud Run / K8s
-4. Set environment variables
-5. Configure OAuth callbacks
-6. Monitor with logging
-
-## 🔧 Development
-
-### Quick Commands
-
-```bash
-# Install all dependencies
-make install
-
-# Run full stack in development mode
-make dev
-
-# Run services individually
-make backend   # FastAPI on :8000
-make frontend  # Vite on :5173
-
-# Docker deployment
-make docker-up    # Start all services
-make docker-down  # Stop services
-
-# Testing & Quality
-make test      # Run backend tests
-make lint      # Format and lint code
-make clean     # Remove build artifacts
-```
-
 ### Development Workflow
 
 1. **Setup Environment**
@@ -629,90 +551,6 @@ make clean     # Remove build artifacts
    make test
    ```
 
-### File Modification Guide
-
-**Adding a New Agent:**
-1. Create agent file in `backend/persona_reflect/agents/`
-2. Define agent class with ADK decorators
-3. Add persona definition to `prompts/personas.py`
-4. Register in `orchestrator.py`
-5. Update frontend `PersonaCard.tsx` for display
-
-**Adding Agent Tools:**
-1. Create tool file in `backend/persona_reflect/tools/`
-2. Define tool functions with proper decorators
-3. Import in agent file
-4. Add to agent's tool list
-
-**Modifying API Endpoints:**
-1. Edit `backend/persona_reflect/main.py`
-2. Update Pydantic models for validation
-3. Update frontend `services/api.ts`
-4. Update TypeScript types in `types/index.ts`
-
-**Frontend Components:**
-1. Create component in `frontend/src/components/`
-2. Import in parent component or `App.tsx`
-3. Use TypeScript for type safety
-4. Follow existing Tailwind styling patterns
-
-### Environment Variables
-
-**Backend (`backend/.env`):**
-```bash
-GOOGLE_API_KEY=your_gemini_api_key_here
-API_HOST=0.0.0.0
-API_PORT=8000
-CORS_ORIGINS=http://localhost:5173
-```
-
-**Frontend (`.env.local` optional):**
-```bash
-VITE_API_URL=http://localhost:8000
-```
-
-### Debugging Tips
-
-**Backend Issues:**
-```bash
-# Check API health
-curl http://localhost:8000/
-
-# Test specific endpoint
-curl -X POST http://localhost:8000/api/reflect \
-  -H "Content-Type: application/json" \
-  -d '{"user_id":"test","dilemma":"test issue"}'
-
-# View logs
-# Uvicorn logs appear in terminal running make backend
-```
-
-**Frontend Issues:**
-```bash
-# Check console in browser DevTools (F12)
-# Verify API connection
-# Check Network tab for failed requests
-
-# Clear cache and rebuild
-rm -rf frontend/node_modules
-cd frontend && npm install
-npm run dev
-```
-
-**Docker Issues:**
-```bash
-# View container logs
-docker logs persona-reflect-backend
-docker logs persona-reflect-frontend
-
-# Restart services
-make docker-down
-make docker-up
-
-# Rebuild without cache
-docker-compose build --no-cache
-```
-
 ## 📈 Performance
 
 - **Response Time**: <3 seconds for all 4 personas
@@ -736,7 +574,6 @@ gcloud run deploy persona-reflect \
 ```
 
 ## 👥 Team
-
 - **Frontend**: React + TypeScript expert
 - **Backend**: Google ADK integration
 - **AI/ML**: Prompt engineering & agent design
@@ -745,10 +582,13 @@ gcloud run deploy persona-reflect \
 ## 📝 Key Features for Judges
 
 1. **Real Google ADK Implementation**: Not just API calls, but true multi-agent orchestration
-2. **Production-Ready**: Docker, tests, proper error handling
-3. **Unique Personas**: Each agent has distinct personality via few-shot prompting
-4. **Actionable Output**: Synthesizes insights into concrete steps
-5. **Clean Architecture**: Modular, scalable, maintainable
+2. **15+ Evidence-Based Tools**: CBT, mindfulness, self-compassion, and real calendar integration
+3. **Production-Ready**: Docker, tests, proper error handling
+4. **Unique Personas**: Each agent has distinct personality via few-shot prompting
+5. **Real Google Calendar Integration**: Actual OAuth flow, live scheduling capabilities
+6. **Therapeutic Foundations**: Tools based on CBT, ACT, MBSR, and self-compassion research
+7. **Actionable Output**: Synthesizes insights into concrete steps
+8. **Clean Architecture**: Modular, scalable, maintainable
 
 ## 🔮 Future Enhancements
 
