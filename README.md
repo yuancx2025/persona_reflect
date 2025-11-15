@@ -385,51 +385,6 @@ Each agent has access to **evidence-based therapeutic tools** that go beyond con
 | 🧘 **Sage** | 4 mindfulness tools | Breathwork, body scans, values clarification, 5-4-3-2-1 grounding |
 
 **📖 Detailed Documentation:** See [`backend/persona_reflect/agents/README.md`](./backend/persona_reflect/agents/README.md) for:
-- Complete tool reference with examples
-- Evidence-based techniques (CBT, ACT, MBSR, self-compassion research)
-- Implementation details and usage patterns
-- How to add new tools
-
-### 4. **Response Synthesis Layer**
-```
-Agent Responses → Orchestrator → Unified Response
-```
-- Orchestrator collects all persona responses
-- Each response includes:
-  - `persona`: Agent identifier
-  - `name`: Display name
-  - `icon`: UI icon
-  - `response`: Actual advice text
-- Returns combined insights to FastAPI endpoint
-
-### 5. **Action Plan Generation**
-```
-POST /api/action-plan → Action Plan Generator → Concrete Steps
-```
-- User can request actionable steps
-- System synthesizes insights from all personas
-- Generates prioritized, measurable action items
-- Frontend displays via `ActionPlanCreator.tsx`
-
-### 6. **Calendar Integration Flow** (Alex-specific)
-```
-User Request → Alex Agent → Google Calendar API → Booked Event
-```
-
-**Scheduling Flow:**
-1. User asks Alex for help with time management
-2. Alex agent uses `alex_suggest_with_slots()` from `controllers/scheduler.py`
-3. Calls `gcal_demo.py` to fetch real calendar data
-4. Suggests optimal time slots based on availability
-5. Frontend displays slots via `AlexScheduler.tsx`
-6. User selects slot → POST to `/api/alex/book`
-7. Event created in real Google Calendar
-
-**OAuth Flow:**
-- First run: `gcal_demo.py` initiates OAuth
-- Opens browser for Google sign-in
-- Stores refresh token in `.gcal_token.json`
-- Subsequent calls use cached token
 
 ### Development Workflow
 
@@ -481,13 +436,6 @@ User Request → Alex Agent → Google Calendar API → Booked Event
 - **Parallel Processing**: All agents run concurrently
 - **Scalable**: Ready for cloud deployment
 
-## 🚢 Deployment
-
-### Docker Deployment
-```bash
-make docker-build
-make docker-up
-```
 
 ### Google Cloud Run
 ```bash
@@ -503,27 +451,10 @@ gcloud run deploy persona-reflect \
 - **AI/ML**: Prompt engineering & agent design
 - **DevOps**: Docker & cloud deployment
 
-## 📝 Key Features for Judges
-
-1. **Real Google ADK Implementation**: Not just API calls, but true multi-agent orchestration
-2. **15+ Evidence-Based Tools**: CBT, mindfulness, self-compassion, and real calendar integration
-3. **Production-Ready**: Docker, tests, proper error handling
-4. **Unique Personas**: Each agent has distinct personality via few-shot prompting
-5. **Real Google Calendar Integration**: Actual OAuth flow, live scheduling capabilities
-6. **Therapeutic Foundations**: Tools based on CBT, ACT, MBSR, and self-compassion research
-7. **Actionable Output**: Synthesizes insights into concrete steps
-8. **Clean Architecture**: Modular, scalable, maintainable
-
 ## 🔮 Future Enhancements
 
 - [ ] Memory system for conversation history
 - [ ] More specialized agents (Financial Advisor, Career Coach)
 - [ ] A2A protocol for external agent integration
 
-## 📄 License
-
-MIT License - HackDuke 2025
-
 ---
-
-*"Your personal board of advisors, powered by AI"*
